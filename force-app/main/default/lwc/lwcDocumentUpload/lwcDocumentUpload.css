@@ -1,0 +1,9 @@
+.not-uploaded {
+    color: red;
+    font-style: italic;
+}
+
+.uploaded {
+    color: green;
+    font-weight: bold;
+}

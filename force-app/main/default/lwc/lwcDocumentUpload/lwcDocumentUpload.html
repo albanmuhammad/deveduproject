@@ -1,5 +1,42 @@
 <template>
-    <lightning-button>
-        Click
-    </lightning-button>
+    <lightning-card title="Account Documents">
+        <div class="slds-p-around_small">
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                <thead>
+                    <tr>
+                        <th>Document Type</th>
+                        <th>Status</th>
+                        <th>Uploaded File</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={decoratedDocuments} for:item="doc">
+                        <tr key={doc.value}>
+                            <td>{doc.label}</td>
+                            <td>
+                                <span class={doc.statusClass}>({doc.statusLabel})</span>
+                            </td>
+                            <td>
+                                <lightning-file-upload
+                                    name={doc.value}
+                                    record-id={recordId}
+                                    label="Upload"
+                                    accept={acceptedFormats}
+                                    onuploadfinished={handleUploadFinished}>
+                                </lightning-file-upload>
+                            </td>
+                            <td>
+                                <lightning-button label="Save" variant="brand"
+                                    onclick={handleSave}
+                                    data-type={doc.value}
+                                    disabled={doc.disabled}>
+                                </lightning-button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </lightning-card>
 </template>
