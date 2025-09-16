@@ -1,9 +1,14 @@
-.not-uploaded {
-    color: red;
-    font-style: italic;
+.not-uploaded { color: red; font-style: italic; }
+.uploaded { color: green; font-weight: bold; }
+.actions-cell {
+    height: 100%;
+    vertical-align: middle;
+    text-align: center;
 }
-
-.uploaded {
-    color: green;
-    font-weight: bold;
+.action-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    height: 100%;
 }

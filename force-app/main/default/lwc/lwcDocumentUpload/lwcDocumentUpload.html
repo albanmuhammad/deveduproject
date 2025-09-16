@@ -7,6 +7,7 @@
                         <th>Document Type</th>
                         <th>Status</th>
                         <th>Uploaded File</th>
+                        <th>Document Link</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -15,23 +16,46 @@
                         <tr key={doc.value}>
                             <td>{doc.label}</td>
                             <td>
-                                <span class={doc.statusClass}>({doc.statusLabel})</span>
+                                <span class={doc.statusClass}>{doc.statusLabel}</span>
                             </td>
                             <td>
                                 <lightning-file-upload
                                     name={doc.value}
-                                    record-id={recordId}
+                                    record-id={uploadParentId}
                                     label="Upload"
                                     accept={acceptedFormats}
-                                    onuploadfinished={handleUploadFinished}>
+                                    onuploadfinished={handleUploadFinished}
+                                    disabled={doc.uploadDisabled}>
                                 </lightning-file-upload>
                             </td>
                             <td>
-                                <lightning-button label="Save" variant="brand"
-                                    onclick={handleSave}
-                                    data-type={doc.value}
-                                    disabled={doc.disabled}>
-                                </lightning-button>
+                                <template if:true={doc.documentLink}>
+                                    <a href={doc.documentLink} target="_blank" rel="noopener">Open</a>
+                                </template>
+                                <template if:false={doc.documentLink}>
+                                    <span class="slds-text-color_weak">—</span>
+                                </template>
+                            </td>
+                            <td class="actions-cell">
+                                <div class="action-buttons">
+                                    <template if:false={doc.hideVerify}>
+                                        <lightning-button
+                                            class="slds-m-right_small"
+                                            label={doc.verifyLabel}
+                                            variant="success"
+                                            onclick={handleVerify}
+                                            data-type={doc.value}
+                                            disabled={doc.verifyDisabled}>
+                                        </lightning-button>
+                                    </template>
+                                    <lightning-button
+                                        label="Delete"
+                                        variant="destructive"
+                                        onclick={handleDelete}
+                                        data-type={doc.value}
+                                        disabled={doc.deleteDisabled}>
+                                    </lightning-button>
+                                </div>
                             </td>
                         </tr>
                     </template>
