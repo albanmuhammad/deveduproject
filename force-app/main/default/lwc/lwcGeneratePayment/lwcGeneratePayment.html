@@ -1,0 +1,57 @@
+<template>
+  <lightning-quick-action-panel title="Generate Payment Information" onclose={close}>
+    <div class="slds-p-around_medium slds-var-p-bottom_none">
+      <lightning-input type="number" label="Opportunity Amount" value={amount} disabled>
+      </lightning-input>
+
+      <lightning-radio-group class="slds-m-top_medium"
+        label="Payment Type"
+        options={paymentOptions}
+        value={paymentType}
+        onchange={onTypeChange}>
+      </lightning-radio-group>
+
+      <template if:true={isInstallment}>
+        <lightning-combobox class="slds-m-top_small"
+          label="Tenor (x)"
+          options={tenorOptions}
+          value={tenor}
+          onchange={onTenorChange}>
+        </lightning-combobox>
+      </template>
+
+      <lightning-record-picker
+        class="slds-m-top_small"
+        label="Payment Channel"
+        placeholder="Cari payment channel..."
+        object-api-name="Payment_Channel__c"
+        value={paymentChannelId}
+        onchange={onPaymentChannelChange}>
+      </lightning-record-picker>
+
+      <template if:true={rows.length}>
+        <div class="slds-m-top_large">
+          <lightning-datatable key-field="id"
+            data={rows}
+            columns={columns}
+            draft-values={draftValues}
+            onsave={handleDraftSave}
+            hide-checkbox-column>
+          </lightning-datatable>
+
+          <div class="slds-m-top_small slds-text-title_bold">
+            Total rows: {totalRows} | Sum: {sumFormatted} | Target: {amountFormatted}
+            <template if:true={hasDiff}>
+              <span class="slds-text-color_error"> (selisih {diffFormatted})</span>
+            </template>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <div slot="footer">
+      <lightning-button variant="neutral" label="Cancel" onclick={close}></lightning-button>
+      <lightning-button variant="brand" label="Save" onclick={save} disabled={saveDisabled}></lightning-button>
+    </div>
+  </lightning-quick-action-panel>
+</template>

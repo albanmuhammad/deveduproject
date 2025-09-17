@@ -1,0 +1,101 @@
+<apex:page standardController="Opportunity" extensions="ExamCardController" renderAs="pdf" 
+    applyBodyTag="false" applyHtmlTag="false" showHeader="false">
+<html>
+<head>
+    <style>
+        @page {
+            size: A4 landscape;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .card {
+            border: 2px solid #000;
+            width: 800px;
+            height: 400px;
+            padding: 20px;
+            position: relative;
+        }
+        .header {
+            background: #004080;
+            color: #fff;
+            font-size: 22px;
+            font-weight: bold;
+            padding: 10px;
+            text-align: left;
+        }
+        .logo {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        .logo img {
+            width: 100px;
+        }
+        .details-label {
+            font-weight: bold;
+            font-size: 16px;
+            color: #004080;
+        }
+        .details-value {
+            font-size: 16px;
+            color: #333;
+        }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            margin-top: 30px;
+            color: #F58220; /* Orange accent */
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <!-- Header -->
+        <div class="header">
+            Exam Card
+        </div>
+
+        <!-- Logo -->
+        <div class="logo">
+            <img src="{!URLFOR($Resource.MetroSevenLogo)}" />
+        </div>
+
+        <!-- Content -->
+        <table style="margin-top:40px;">
+            <tr>
+                <!-- Photo -->
+                <td style="width:180px; text-align:center; vertical-align:top;">
+                    <apex:outputPanel rendered="{!NOT(ISBLANK(photoUrl))}">
+                        <img src="{!photoUrl}" width="160" height="210" style="border:1px solid #000;" />
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!ISBLANK(photoUrl)}">
+                        <img src="{!URLFOR($Resource.PlaceholderPhoto)}" width="160" height="210" style="border:1px solid #000;" />
+                    </apex:outputPanel>
+                </td>
+
+                <!-- Student Details -->
+                <td style="padding-left:30px; vertical-align:top;">
+                    <p>
+                        <span class="details-label">Name :</span>
+                        <span class="details-value">{!studentName}</span>
+                    </p>
+                    <p>
+                        <span class="details-label">Test ID :</span>
+                        <span class="details-value">{!testId}</span>
+                    </p>
+                </td>
+            </tr>
+        </table>
+
+        <!-- Footer -->
+        <div class="footer">
+            Please bring this card on exam day. Thank you.
+        </div>
+    </div>
+</body>
+</html>
+</apex:page>
