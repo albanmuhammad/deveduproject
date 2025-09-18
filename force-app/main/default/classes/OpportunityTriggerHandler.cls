@@ -1,7 +1,10 @@
 public with sharing class OpportunityTriggerHandler extends TriggerHandler {
+
     protected override void afterInsert() {
     Set<Id> batchIds = new Set<Id>();
+    List<Opportunity> opps = new List<Opportunity>();
     for (Opportunity oppty : (List<Opportunity>) Trigger.new) {
+        opps.add(oppty);
         if (oppty.Master_Batch__c != null) {
             batchIds.add(oppty.Master_Batch__c);
         }
@@ -30,10 +33,27 @@ public with sharing class OpportunityTriggerHandler extends TriggerHandler {
     if (!testInfoToInsert.isEmpty()) {
         insert testInfoToInsert;
     }
+
+    PaymentInfoFromOpporyunityController.createPaymentInfo(opps);
 }
 
 
     protected override void afterUpdate() {
-        
+        // jalankan hanya saat berubah dari false -> true
+        List<Opportunity> opps = new List<Opportunity>();
+
+        for (Integer i = 0; i < Trigger.new.size(); i++) {
+            Opportunity newOpp = (Opportunity)Trigger.new[i];
+            Opportunity oldOpp = (Opportunity)Trigger.old[i];
+
+            if (newOpp.Is_Booking_Fee_Paid__c == true &&
+                (oldOpp == null || oldOpp.Is_Booking_Fee_Paid__c != true)) {
+                opps.add(newOpp);
+            }
+        }
+
+        if (!opps.isEmpty()) {
+            PaymentInfoFromOpporyunityController.createPaymentInfo(opps);
+        }
     }
-}   
+}
