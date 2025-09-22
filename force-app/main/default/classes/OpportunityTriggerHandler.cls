@@ -1,23 +1,23 @@
 public with sharing class OpportunityTriggerHandler extends TriggerHandler { 
 
     protected override void afterInsert() {
-	    // Test Info
+        // Test Info
         CreateTestInfoController.handleTestInfoCreation((List<Opportunity>) Trigger.new, null);
 
-	    // Payment Info
-        List<Opportunity> opps = new List<Opportunity>();
-        for (Opportunity oppty : (List<Opportunity>) Trigger.new) {
-            opps.add(oppty);        
-        }
+        // Payment Info
+        List<Opportunity> opps = (List<Opportunity>) Trigger.new;
         PaymentInfoFromOpporyunityController.createPaymentInfo(opps);
+
+        // Active Flag handling (new opps should be active)
+        OpportunityActiveFlagController.handleAfterInsert(opps);
     }
 
     protected override void afterUpdate() {
+        // Test Info
         CreateTestInfoController.handleTestInfoCreation((List<Opportunity>) Trigger.new, (Map<Id, Opportunity>) Trigger.oldMap);
 
-	    // jalankan hanya saat berubah dari false -> true
+        // jalankan hanya saat berubah dari false -> true
         List<Opportunity> opps = new List<Opportunity>();
-
         for (Integer i = 0; i < Trigger.new.size(); i++) {
             Opportunity newOpp = (Opportunity)Trigger.new[i];
             Opportunity oldOpp = (Opportunity)Trigger.old[i];
@@ -27,13 +27,12 @@ public with sharing class OpportunityTriggerHandler extends TriggerHandler {
                 opps.add(newOpp);
             }
         }
-
         if (!opps.isEmpty()) {
             PaymentInfoFromOpporyunityController.createPaymentInfo(opps);
         }
 
         /* -------------------- NEW LOGIC: Batch_Study_Program__c + Name -------------------- */
-
+        // (your existing name & junction logic stays unchanged)
         List<Opportunity> toUpdate = new List<Opportunity>();
         for (Opportunity newOpp : (List<Opportunity>) Trigger.new) {
             Opportunity oldOpp = ((Map<Id, Opportunity>) Trigger.oldMap).get(newOpp.Id);
@@ -126,5 +125,8 @@ public with sharing class OpportunityTriggerHandler extends TriggerHandler {
                 update updates;
             }
         }
+
+        // Active Flag handling (updates)
+        OpportunityActiveFlagController.handleAfterUpdate((List<Opportunity>) Trigger.new, (Map<Id, Opportunity>) Trigger.oldMap);
     }
 }
