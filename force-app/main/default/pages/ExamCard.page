@@ -13,41 +13,53 @@
             }
             .card {
                 border: 2px solid #000;
-                width: 800px;
-                height: 400px;
-                padding: 20px;
+                width: 540px;
+                height: 340px;
+                padding: 15px;
                 position: relative;
+                border-radius: 12px;
+                box-shadow: 0 0 5px #888;
+                background: #fff;
+                margin: auto;
             }
             .header-text {
                 background: #004080;
                 color: #fff;
-                font-size: 22px;
+                font-size: 20px;
                 font-weight: bold;
-                padding: 10px;
-                text-align: left;
+                padding: 8px 12px;
+                border-radius: 8px 8px 0 0;
             }
             .header-logo {
                 position: absolute;
-                top: 20px;
-                right: 20px;
+                top: 15px;
+                right: 15px;
             }
             .header-logo img {
-                width: 100px;
+                width: 70px;
             }
             .details-label {
                 font-weight: bold;
-                font-size: 16px;
+                font-size: 14px;
                 color: #004080;
+                display: inline-block;
+                width: 130px;
             }
             .details-value {
-                font-size: 16px;
+                font-size: 14px;
                 color: #333;
+            }
+            .photo-box {
+                width: 100px;
+                height: 140px;
+                border: 1px solid #000;
+                margin: auto;
             }
             .footer {
                 text-align: center;
-                font-size: 12px;
-                margin-top: 30px;
-                color: #F58220; /* Orange accent */
+                font-size: 11px;
+                margin-top: 20px;
+                color: #F58220;
                 font-weight: bold;
             }
         </style>
@@ -59,35 +71,41 @@
                 <div class="header-text">
                     Exam Card
                 </div>
-    
-                <!-- Logo -->
                 <div class="header-logo">
                     <img src="{!URLFOR($Resource.MetroSevenLogo)}" />
                 </div>
             </div>
 
             <!-- Content -->
-            <table style="margin-top:40px;">
+            <table style="margin-top:20px; width:100%;">
                 <tr>
                     <!-- Photo -->
-                    <td style="width:180px; text-align:center; vertical-align:top;">
+                    <td style="width:160px; text-align:center; vertical-align:top;">
                         <apex:outputPanel rendered="{!NOT(ISBLANK(photoUrl))}">
-                            <img src="{!photoUrl}" width="160" height="210" style="border:1px solid #000;" />
+                            <img src="{!photoUrl}" width="140" height="180" style="border:1px solid #000;" />
                         </apex:outputPanel>
                         <apex:outputPanel rendered="{!ISBLANK(photoUrl)}">
-                            <img src="{!URLFOR($Resource.PlaceholderPhoto)}" width="160" height="210" style="border:1px solid #000;" />
+                            <img src="{!URLFOR($Resource.PlaceholderPhoto)}" width="140" height="180" style="border:1px solid #000;" />
                         </apex:outputPanel>
                     </td>
 
                     <!-- Student Details -->
-                    <td style="padding-left:30px; vertical-align:top;">
+                    <td style="padding-left:20px; vertical-align:top;">
+                        <p>
+                            <span class="details-label">Registration ID :</span>
+                            <span class="details-value">{!registrationId}</span>
+                        </p>
+                        <p>
+                            <span class="details-label">Test ID :</span>
+                            <span class="details-value">{!testId}</span>
+                        </p>
                         <p>
                             <span class="details-label">Name :</span>
                             <span class="details-value">{!studentName}</span>
                         </p>
                         <p>
-                            <span class="details-label">Test ID :</span>
-                            <span class="details-value">{!testId}</span>
+                            <span class="details-label">Test Schedule :</span>
+                            <span class="details-value">{!testSchedule}</span>
                         </p>
                     </td>
                 </tr>
