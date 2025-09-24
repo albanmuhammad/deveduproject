@@ -52,7 +52,7 @@ public with sharing class CreateTestInfoController {
                     Application_Progress__c = oppty.Id,
                     Applicant__c = oppty.AccountId,
                     Master_Batch__c = oppty.Master_Batch__c,
-                    Name = 'Test-' + oppty.AccountId,
+                    Name = 'Test/' + oppty.Name,
                     Test_Schedule__c = (batch != null ? batch.Test_Schedule__c : null)
                 ));
             }

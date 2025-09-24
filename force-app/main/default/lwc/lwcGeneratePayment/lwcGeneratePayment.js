@@ -5,6 +5,8 @@ import { getRecord, getFieldValue, getRecordNotifyChange } from 'lightning/uiRec
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import savePayments from '@salesforce/apex/PaymentInformationController.savePayments';
 import AMOUNT_FIELD from '@salesforce/schema/Opportunity.Amount';
+import advanceOppStage from '@salesforce/apex/PaymentInformationController.advanceOppStage';
+
 
 const FIELDS = [AMOUNT_FIELD];
 
@@ -162,6 +164,8 @@ onTenorChange(e) {
             allocation: 'Tuition Fee',
             paymentStatus: 'Unpaid'
         });
+
+        await advanceOppStage({ oppId: this.recordId });
 
         this.toast('Success','Payment Information berhasil dibuat','success');
         this.dispatchEvent(new CloseActionScreenEvent());

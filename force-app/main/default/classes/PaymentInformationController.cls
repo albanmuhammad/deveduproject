@@ -13,7 +13,7 @@ public with sharing class PaymentInformationController {
 
         // Ambil Amount + Phone dari Account
         Opportunity opp = [
-            SELECT Id, Amount, Account.Phone
+            SELECT Id, Amount, Account.PersonMobilePhone
             FROM Opportunity
             WHERE Id = :oppId
         ];
@@ -38,7 +38,7 @@ public with sharing class PaymentInformationController {
         }
 
         // Build VA: prefix + digits-only phone
-        String phone = (opp.Account == null) ? null : opp.Account.Phone;
+        String phone = (opp.Account == null) ? null : opp.Account.PersonMobilePhone;
         if (String.isBlank(phone)) {
             throw new AuraHandledException('Nomor telepon pada Account kosong. Isi Phone di Account terlebih dahulu.');
         }
@@ -66,4 +66,22 @@ public with sharing class PaymentInformationController {
         }
         insert toInsert;
     }
+
+    @AuraEnabled
+    public static void advanceOppStage(Id oppId) {
+        if (oppId == null) throw new AuraHandledException('Opportunity Id kosong');
+        
+        Opportunity opp = [
+            SELECT Id, StageName
+            FROM Opportunity
+            WHERE Id = :oppId
+            LIMIT 1
+        ];
+        
+        if (opp.StageName == 'Test Passed') {
+            opp.StageName = 'Payment';
+            update opp;
+        }
+    }
+
 }

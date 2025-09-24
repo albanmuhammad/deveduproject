@@ -128,5 +128,11 @@ public with sharing class OpportunityTriggerHandler extends TriggerHandler {
 
         // Active Flag handling (updates)
         OpportunityActiveFlagController.handleAfterUpdate((List<Opportunity>) Trigger.new, (Map<Id, Opportunity>) Trigger.oldMap);
+
+        // Amount calculation when Stage = 'Test Passed'
+        OpportunityAmountController.handleAmountCalculation(
+            (List<Opportunity>) Trigger.new,
+            (Map<Id, Opportunity>) Trigger.oldMap
+        );
     }
 }
