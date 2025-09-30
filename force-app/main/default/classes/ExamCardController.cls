@@ -18,11 +18,6 @@ public with sharing class ExamCardController {
         ];
         registrationId = opp.Name;
 
-        // 🔹 Update stage if still "Registration"
-        // if (opp.StageName == 'Registration') {
-        //     opp.StageName = 'Test';
-        //     update opp;
-        // }
 
         // Fetch Test Information
         List<Test_Information__c> tiList = [

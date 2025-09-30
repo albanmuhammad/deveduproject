@@ -1,0 +1,17 @@
+<template>
+    <lightning-card title="Pas Foto 3x4" icon-name="doctype:image">
+        <div class="cardBody">
+            <template if:true={imageUrl}>
+                <img src={imageUrl} alt="Pas Foto 3x4" class="photo" />
+            </template>
+
+            <template if:true={noImage}>
+                <div class="slds-text-body_small slds-text-color_weak">No Pas Foto found</div>
+            </template>
+
+            <template if:true={error}>
+                <div class="slds-text-color_error slds-text-body_small">Error loading photo</div>
+            </template>
+        </div>
+    </lightning-card>
+</template>

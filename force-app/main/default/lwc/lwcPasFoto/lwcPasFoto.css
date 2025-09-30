@@ -1,0 +1,16 @@
+.cardBody {
+    width: 100%;
+    min-width: 0; /* IMPORTANT: allows the component to shrink in narrow columns */
+    padding: 0.75rem;
+    text-align: center;
+}
+
+.photo {
+    max-width: 340px;     /* fits nicely in sidebar */
+    max-height: 340px;
+    width: auto;
+    height: auto;
+    border-radius: 6px;
+    display: block;
+    margin: 0 auto;
+}

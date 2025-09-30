@@ -1,0 +1,22 @@
+<aura:component implements="force:appHostable,flexipage:availableForAllPageTypes,
+                           flexipage:availableForRecordHome,force:hasRecordId,
+                           forceCommunity:availableForAllPageTypes,
+                           force:lightningQuickActionWithoutHeader"
+                access="global"
+                controller="GenerateTestCard">
+    
+    <aura:attribute name="recordId" type="Id"/>
+    <aura:attribute name="isLoading" type="Boolean" default="false"/>
+
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+
+    <div aura:id="spinner" 
+         class="slds-spinner slds-spinner_large slds-spinner_brand slds-hide" 
+         role="status">
+        <span class="slds-assistive-text">Loading</span>
+        <div class="slds-spinner__dot-a"></div>
+        <div class="slds-spinner__dot-b"></div>
+    </div>
+
+
+</aura:component>
