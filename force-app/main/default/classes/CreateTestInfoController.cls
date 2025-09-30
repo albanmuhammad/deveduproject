@@ -6,33 +6,26 @@ public with sharing class CreateTestInfoController {
         for (Opportunity newOppty : newList) {
             Opportunity oldOppty = (oldMap != null ? oldMap.get(newOppty.Id) : null);
 
-            Boolean shouldProcess = false;
+            Boolean nameChanged = (oldOppty != null && newOppty.Name != oldOppty.Name);
+            Boolean hasBatchStudyProgram = (newOppty.Batch_Study_Program__c != null);
 
-            // Insert case: batch already filled
-            if (oldMap == null && newOppty.Master_Batch__c != null && newOppty.AccountId != null) {
-                shouldProcess = true;
-            }
-
-            // Update case: batch changed from null → not null
-            if (oldMap != null 
-                && oldOppty.Master_Batch__c == null 
-                && newOppty.Master_Batch__c != null 
-                && newOppty.AccountId != null) {
-                shouldProcess = true;
-            }
-
-            if (shouldProcess) {
+            if (nameChanged && hasBatchStudyProgram && newOppty.AccountId != null) {
                 oppsToProcess.add(newOppty);
-                batchIds.add(newOppty.Master_Batch__c);
+                if (newOppty.Master_Batch__c != null) {
+                    batchIds.add(newOppty.Master_Batch__c);
+                }
             }
         }
 
         if (oppsToProcess.isEmpty()) return;
 
         // Query batches
-        Map<Id, Master_Batches__c> batchMap = new Map<Id, Master_Batches__c>(
-            [SELECT Id, Test_Schedule__c FROM Master_Batches__c WHERE Id IN :batchIds]
-        );
+        Map<Id, Master_Batches__c> batchMap = new Map<Id, Master_Batches__c>();
+        if (!batchIds.isEmpty()) {
+            batchMap = new Map<Id, Master_Batches__c>(
+                [SELECT Id, Test_Schedule__c FROM Master_Batches__c WHERE Id IN :batchIds]
+            );
+        }
 
         // Prevent duplicates
         Set<Id> oppIds = new Map<Id, Opportunity>(oppsToProcess).keySet();
@@ -46,7 +39,7 @@ public with sharing class CreateTestInfoController {
         List<Test_Information__c> testInfoToInsert = new List<Test_Information__c>();
         for (Opportunity oppty : oppsToProcess) {
             if (!existingTestInfo.containsKey(oppty.Id)) {
-                Master_Batches__c batch = batchMap.get(oppty.Master_Batch__c);
+                Master_Batches__c batch = (oppty.Master_Batch__c != null ? batchMap.get(oppty.Master_Batch__c) : null);
 
                 testInfoToInsert.add(new Test_Information__c(
                     Application_Progress__c = oppty.Id,

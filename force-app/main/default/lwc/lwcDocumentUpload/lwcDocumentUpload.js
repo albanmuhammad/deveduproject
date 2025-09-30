@@ -179,8 +179,6 @@ export default class LwcDocumentUpload extends LightningElement {
                 uploadDisabled = d.value === 'Pas Foto 3x4';
             }
 
-            const noVerifyTypes = ['Pas Foto 3x4', 'Lainnya'];
-            const hasVerify = !noVerifyTypes.includes(d.value);
 
             return {
                 ...d,
@@ -188,7 +186,6 @@ export default class LwcDocumentUpload extends LightningElement {
                 statusClass,
                 uploadDisabled,
                 verifyDisabled: !d.uploaded || !!d.verified,
-                hideVerify: !hasVerify,
                 verifyLabel: d.verified ? 'Verified' : 'Verify',
                 deleteDisabled: !d.uploaded
             };
