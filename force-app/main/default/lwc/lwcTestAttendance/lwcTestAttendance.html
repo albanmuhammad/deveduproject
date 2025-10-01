@@ -1,10 +1,22 @@
 <template>
     <lightning-card title="Today's Test Attendance" icon-name="standard:event">
         <div class="slds-m-around_medium">
+
+            <!-- Search Box -->
+            <lightning-input 
+                type="search"
+                label="Search"
+                placeholder="Search by name, applicant, or study program..."
+                onchange={handleSearch}
+                class="slds-m-bottom_small">
+            </lightning-input>
+
+            <!-- Spinner -->
             <template if:true={isLoading}>
                 <lightning-spinner alternative-text="Loading..." size="medium"></lightning-spinner>
             </template>
 
+            <!-- Datatable -->
             <template if:true={hasRecords}>
                 <lightning-datatable
                     key-field="Id"
@@ -14,12 +26,14 @@
                 </lightning-datatable>
             </template>
 
+            <!-- No Records -->
             <template if:false={hasRecords}>
                  <div class="slds-align_absolute-center slds-p-around_medium">
-                    No test schedules found for today that need attendance marking. 👍
+                    No test schedules found for today that need attendance marking 👍
                 </div>
             </template>
 
+            <!-- Error -->
             <template if:true={error}>
                 <div class="slds-text-color_error slds-p-around_small">
                     An error occurred: {errorText}
