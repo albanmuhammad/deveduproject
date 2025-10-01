@@ -101,21 +101,55 @@ public with sharing class AccountDocumentController {
         if (String.isBlank(documentType) || contentDocumentId == null) {
             throw new AuraHandledException('Missing required parameters.');
         }
+
+        // Find or create the Account_Document__c that represents this slot
         Account_Document__c doc = getOrCreateAccountDocument(accountId, opportunityId, documentType);
+
+        // --- NEW: If this slot is NOT verified, remove any previously attached ContentDocuments
+        //           so we don't keep stale files around.
+        if (doc.Verified__c == false) {
+            // Collect all ContentDocuments currently linked to this Account_Document__c
+            List<ContentDocumentLink> oldLinks = [
+                SELECT ContentDocumentId
+                FROM ContentDocumentLink
+                WHERE LinkedEntityId = :doc.Id
+            ];
+            Set<Id> oldDocIds = new Set<Id>();
+            for (ContentDocumentLink l : oldLinks) {
+                // Just in case the same documentId gets passed again (rare), exclude the incoming one.
+                if (l.ContentDocumentId != contentDocumentId) {
+                    oldDocIds.add(l.ContentDocumentId);
+                }
+            }
+            if (!oldDocIds.isEmpty()) {
+                // Deleting ContentDocument deletes all its links (including from the Opportunity “Files” related list)
+                delete [SELECT Id FROM ContentDocument WHERE Id IN :oldDocIds];
+            }
+            // Clear any stale link URL
+            doc.Document_Link__c = null;
+            update doc;
+        }
+
+        // Link the new upload to the Account_Document__c
         insert new ContentDocumentLink(
             ContentDocumentId = contentDocumentId,
             LinkedEntityId    = doc.Id,
             ShareType         = 'V',
             Visibility        = 'AllUsers'
         );
+
+        // Build a title based on AP name for nicer file naming
         String apName = '';
         if (opportunityId != null) {
             apName = [SELECT Name FROM Opportunity WHERE Id = :opportunityId LIMIT 1].Name;
         }
         String newFileTitle = String.isBlank(apName) ? documentType : (documentType + '_' + apName);
+
+        // Rename ContentDocument + latest ContentVersion
         ContentDocument cd = [SELECT Id, Title FROM ContentDocument WHERE Id = :contentDocumentId LIMIT 1];
         cd.Title = newFileTitle;
         update cd;
+
         ContentVersion cv = [
             SELECT Id, Title
             FROM ContentVersion
@@ -125,6 +159,8 @@ public with sharing class AccountDocumentController {
         ];
         cv.Title = newFileTitle;
         update cv;
+
+        // Update the logical document record
         String docName = String.isBlank(apName) ? documentType : (documentType + ' ' + apName);
         doc.Verified__c = false;
         doc.Document_Link__c = '/lightning/r/ContentDocument/' + contentDocumentId + '/view';

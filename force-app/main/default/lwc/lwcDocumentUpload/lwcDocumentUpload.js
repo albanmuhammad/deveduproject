@@ -100,6 +100,14 @@ export default class LwcDocumentUpload extends LightningElement {
         const docType = event.target.name;
         const files = event.detail?.files || [];
         if (!files.length) return;
+
+        // Guard: block uploads for verified docs (extra safety)
+        const current = this.documents.find(d => d.value === docType);
+        if (current?.verified) {
+            this.toast('Blocked', `"${docType}" is already verified. Delete it first to upload a replacement.`, 'warning');
+            return;
+        }
+
         const contentDocumentId = files[0].documentId;
         try {
             await saveAccountDocument({
@@ -172,13 +180,15 @@ export default class LwcDocumentUpload extends LightningElement {
                         ? 'slds-text-color_success'
                         : 'slds-text-color_error';
 
-            let uploadDisabled = true;
-            if (this.stageName === 'Registration') {
+            // Disable upload when verified (and keep your stage-based rules otherwise)
+            let uploadDisabled = false;
+            if (d.verified) {
+                uploadDisabled = true;
+            } else if (this.stageName === 'Registration') {
                 uploadDisabled = d.value !== 'Pas Foto 3x4';
             } else if (this.stageName === 'Re-Registration') {
                 uploadDisabled = d.value === 'Pas Foto 3x4';
             }
-
 
             return {
                 ...d,

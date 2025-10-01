@@ -18,16 +18,26 @@
                             <td>
                                 <span class={doc.statusClass}>{doc.statusLabel}</span>
                             </td>
+
+                            <!-- Upload cell -->
                             <td>
-                                <lightning-file-upload
-                                    name={doc.value}
-                                    record-id={uploadParentId}
-                                    label="Upload"
-                                    accept={acceptedFormats}
-                                    onuploadfinished={handleUploadFinished}
-                                    disabled={doc.uploadDisabled}>
-                                </lightning-file-upload>
+                                <!-- When not disabled, show the real uploader -->
+                                <template if:false={doc.uploadDisabled}>
+                                    <lightning-file-upload
+                                        name={doc.value}
+                                        record-id={uploadParentId}
+                                        label="Upload"
+                                        accept={acceptedFormats}
+                                        onuploadfinished={handleUploadFinished}>
+                                    </lightning-file-upload>
+                                </template>
+
+                                <!-- When disabled (e.g., Verified), show a disabled lookalike -->
+                                <template if:true={doc.uploadDisabled}>
+                                    <lightning-button label="Upload Files" disabled></lightning-button>
+                                </template>
                             </td>
+
                             <td>
                                 <template if:true={doc.documentLink}>
                                     <a href={doc.documentLink} target="_blank" rel="noopener">Open</a>
@@ -36,6 +46,7 @@
                                     <span class="slds-text-color_weak">—</span>
                                 </template>
                             </td>
+
                             <td class="actions-cell">
                                 <div class="action-buttons">
                                     <template if:false={doc.hideVerify}>
