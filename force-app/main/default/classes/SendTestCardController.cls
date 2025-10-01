@@ -7,7 +7,7 @@ public class SendTestCardController {
                 SELECT Id, Account.Name, Account.PersonEmail, 
                     Study_Program__c, Study_Program__r.Name, 
                     Master_Intake__c, Master_Intake__r.Name, 
-                    Name, Test_Schedule__c, StageName
+                    Name, Test_Schedule__c, StageName, Campus__c
                 FROM Opportunity
                 WHERE Id = :oppId
                 LIMIT 1
@@ -26,6 +26,7 @@ public class SendTestCardController {
             String studyProgram  = opp.Study_Program__r.Name;
             String intake        = opp.Master_Intake__r.Name;
             String applicationId = opp.Name;
+            String campus = opp.Campus__c;
             
             // Combine into DateTime for formatting
             DateTime dt = opp.Test_Schedule__c;
@@ -77,6 +78,7 @@ public class SendTestCardController {
                 '<p>' +
                 'Tanggal : <strong>' + formattedDate + '</strong><br/>' +
                 'Waktu : <strong>' + formattedTime + '</strong>' +
+                'Lokasi : <strong>' + campus + '</strong>' +
                 '</p>' +
 
                 // rules
