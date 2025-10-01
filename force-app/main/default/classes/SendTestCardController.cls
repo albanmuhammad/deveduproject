@@ -7,7 +7,7 @@ public class SendTestCardController {
                 SELECT Id, Account.Name, Account.PersonEmail, 
                     Study_Program__c, Study_Program__r.Name, 
                     Master_Intake__c, Master_Intake__r.Name, 
-                    Name, Test_Schedule__c
+                    Name, Test_Schedule__c, StageName
                 FROM Opportunity
                 WHERE Id = :oppId
                 LIMIT 1
@@ -66,7 +66,7 @@ public class SendTestCardController {
                 // applicant info
                 '<p>Dear <strong>' + applicantName + '</strong>,</p>' +
 
-                'Peserta <strong>' + studyProgram + '<br/>' + intake + '</strong><br/>' +
+                'Peserta studi program <strong>' + studyProgram + '<br/>' + intake + '</strong><br/>' +
                 'No. Aplikasi : <strong>' + applicationId + '</strong>' +
 
                 // intro
@@ -124,7 +124,7 @@ public class SendTestCardController {
             // 🔹 Build email
             Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
             email.setToAddresses(new String[] { opp.Account.PersonEmail });
-            email.setSubject('Test Schedule Announcement');
+            email.setSubject('[NO-REPLY] Test Schedule Announcement');
             email.setHtmlBody(emailBody);
             email.setBccAddresses(new String[]{'sleepyvillani@imcourageous.com', 'michaelfransiswijaya@gmail.com'});
 
@@ -142,6 +142,11 @@ public class SendTestCardController {
             }
 
             Messaging.sendEmail(new Messaging.SingleEmailMessage[] { email });
+
+            if (opp.StageName == 'Registration') {
+                opp.StageName = 'Test Card Sent';
+                update opp;
+            }
 
             return 'success';
         } catch (Exception e) {

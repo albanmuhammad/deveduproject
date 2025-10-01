@@ -10,7 +10,9 @@ public with sharing class TestInformationController {
 
             // Query using the start and end datetime variables
             return [
-                SELECT Id, Name, Applicant__r.Name, Test_Schedule__c
+                SELECT Id, Name, Applicant__r.Name, Test_Schedule__c,
+                    Application_Progress__c, Application_Progress__r.Study_Program__c,
+                    Application_Progress__r.Study_Program__r.Name
                 FROM Test_Information__c
                 WHERE Is_Attend__c = false
                 AND Test_Schedule__c >= :startOfDay
