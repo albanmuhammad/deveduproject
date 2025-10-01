@@ -109,9 +109,11 @@ public with sharing class OpportunityAmountController {
 
 
             // Final amount = baseFee - (batchDiscount% + testDiscount%)
-            Decimal totalDiscPercent = batchDisc + testDisc;
-            Decimal discounted = baseFee * (totalDiscPercent / 100);
-            Decimal finalAmount = baseFee - discounted;
+            // Base fee 20jt
+            Decimal batchDiscountAmount = baseFee * (batchDisc / 100); // Potongan 10% -> 2jt
+            Decimal amountBatchDiscounted = baseFee - batchDiscountAmount; // 20jt - 2jt = 18jt
+            Decimal testDiscountAmount = amountBatchDiscounted * (testDisc / 100); // Potongan 10% -> 1,8jt
+            Decimal finalAmount = amountBatchDiscounted - testDiscountAmount; // 18jt - 1,8jt = 16,2jt
 
             Opportunity upd = new Opportunity(Id = opp.Id, Amount = finalAmount);
             toUpdate.add(upd);
