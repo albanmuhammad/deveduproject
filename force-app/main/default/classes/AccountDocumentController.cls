@@ -57,11 +57,17 @@ public with sharing class AccountDocumentController {
         }
         Map<Id, String> fileByDoc = new Map<Id, String>();
         if (!docs.isEmpty()) {
-            for (ContentDocumentLink l : [
+            Set<Id> docIds = new Map<Id, Account_Document__c>(docs).keySet();
+
+            // Query di luar loop; ambil link terbaru per dokumen
+            List<ContentDocumentLink> links = [
                 SELECT ContentDocumentId, LinkedEntityId
                 FROM ContentDocumentLink
-                WHERE LinkedEntityId IN :new Map<Id, Account_Document__c>(docs).keySet()
-            ]) {
+                WHERE LinkedEntityId IN :docIds
+            ];
+
+            // Isi hanya sekali per LinkedEntityId (karena sudah diurutkan DESC -> yang pertama = terbaru)
+            for (ContentDocumentLink l : links) {
                 if (!fileByDoc.containsKey(l.LinkedEntityId)) {
                     fileByDoc.put(l.LinkedEntityId, l.ContentDocumentId);
                 }
