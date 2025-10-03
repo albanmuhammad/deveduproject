@@ -18,9 +18,22 @@
                     toastTitle = "Success";
                     toastType = "success";
                     toastMsg = "Test Card generated successfully.";
-                } else {
+                } else if (result === "File Updated Success") {
+                    toastTitle = "Success";
+                    toastType = "success";
+                    toastMsg = "Test Card updated successfully.";
+                } else if (result === "Pas foto 3x4 must be verified before generating test card") {
+                    // Validation error for pas foto
+                    toastTitle = "Validation Error";
+                    toastType = "warning";
+                    toastMsg = "Pas foto 3x4 must be verified before generating test card.";
+                } else if (result.startsWith("Error:")) {
                     toastTitle = "Error";
                     toastType = "error";
+                    toastMsg = result;
+                } else {
+                    toastTitle = "Info";
+                    toastType = "info";
                     toastMsg = result;
                 }
             } else if (state === "ERROR") {
@@ -39,10 +52,12 @@
             // 🔹 Show toast
             helper.showToast(toastTitle, toastType, toastMsg);
 
-            // 🔹 Close quick action + refresh view
-            document.activeElement.blur(); // avoid aria-hidden warning
-            $A.get("e.force:closeQuickAction").fire();
-            $A.get("e.force:refreshView").fire();
+            // 🔹 Only close quick action and refresh if successful
+            if (toastType === "success") {
+                document.activeElement.blur(); // avoid aria-hidden warning
+                $A.get("e.force:closeQuickAction").fire();
+                $A.get("e.force:refreshView").fire();
+            }
         });
 
         $A.enqueueAction(action);
@@ -58,13 +73,26 @@
         toastEvent.fire();
     },
 
+    // showSpinner : function(component) {
+    //     var spinner = component.find("spinner");
+    //     $A.util.removeClass(spinner, "slds-hide");
+    //     $A.util.addClass(spinner, "slds-show");
+    // },
+
+    // hideSpinner : function(component) {
+    //     var spinner = component.find("spinner");
+    //     $A.util.removeClass(spinner, "slds-show");
+    //     $A.util.addClass(spinner, "slds-hide");
+    // }
     showSpinner : function(component) {
+        component.set("v.isLoading", true);
         var spinner = component.find("spinner");
         $A.util.removeClass(spinner, "slds-hide");
         $A.util.addClass(spinner, "slds-show");
     },
 
     hideSpinner : function(component) {
+        component.set("v.isLoading", false);
         var spinner = component.find("spinner");
         $A.util.removeClass(spinner, "slds-show");
         $A.util.addClass(spinner, "slds-hide");

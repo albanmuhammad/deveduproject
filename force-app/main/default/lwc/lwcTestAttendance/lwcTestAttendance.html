@@ -1,7 +1,8 @@
 <template>
     <lightning-card title="Today's Test Attendance" icon-name="standard:event">
-        <div class="slds-m-around_medium">
-
+        <!-- Container flex -->
+        <div class="slds-p-around_medium slds-grid slds-grid_vertical slds-grow" style="height:100%;">
+            
             <!-- Search Box -->
             <lightning-input 
                 type="search"
@@ -16,19 +17,20 @@
                 <lightning-spinner alternative-text="Loading..." size="medium"></lightning-spinner>
             </template>
 
-            <!-- Datatable -->
+            <!-- Datatable (make it fill remaining space) -->
             <template if:true={hasRecords}>
                 <lightning-datatable
                     key-field="Id"
                     data={records}
                     columns={columns}
-                    onrowselection={handleRowSelection}>
+                    onrowselection={handleRowSelection}
+                    class="slds-grow">
                 </lightning-datatable>
             </template>
 
             <!-- No Records -->
             <template if:false={hasRecords}>
-                 <div class="slds-align_absolute-center slds-p-around_medium">
+                <div class="slds-align_absolute-center slds-p-around_medium slds-grow">
                     No test schedules found for today that need attendance marking 👍
                 </div>
             </template>
@@ -41,6 +43,7 @@
             </template>
         </div>
 
+        <!-- Footer stays pinned -->
         <div slot="footer">
             <lightning-button
                 label="Mark as Attended"

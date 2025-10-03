@@ -18,6 +18,9 @@ public with sharing class OpportunityTriggerHandler extends TriggerHandler {
 
         // Create quota log
         StudyProgramQuotaLogController.createQuotaLogs(opps, null);
+
+        // Generate Student Number for Closed Won opps
+        StudentNumberController.assignForClosedWon(opps, null);
     }
 
     protected override void afterUpdate() {
@@ -61,5 +64,8 @@ public with sharing class OpportunityTriggerHandler extends TriggerHandler {
 
         // Quota Log update on Closed Lost
         StudyProgramQuotaLogController.createQuotaLogs(oppsNew, oppsOldMap);
+
+        // Generate Student Number for Closed Won opps
+        StudentNumberController.assignForClosedWon(oppsNew, oppsOldMap);
     }
 }

@@ -5,43 +5,84 @@ public with sharing class GenerateTestCard {
         System.debug('⚡ START createTestCardPdf for oppId=' + oppId);
         try {
             Opportunity opp = [
-                SELECT Id, Name, Account.Name, CloseDate
+                SELECT Id, Name, Account.Name, CloseDate, Is_3x4_Photo_Verified__c,
+                    Test_Card_Generated__c
                 FROM Opportunity
                 WHERE Id = :oppId
                 LIMIT 1
             ];
             System.debug('⚡ Found Opportunity: ' + opp);
 
-            PageReference pdfPage = Page.ExamCard; // check this name
-            pdfPage.getParameters().put('id', opp.Id);
-            Blob pdfBlob = pdfPage.getContentAsPDF();
-            System.debug('⚡ PDF Generated, size=' + pdfBlob.size());
+            // Validate pas foto verification
+            if (opp.Is_3x4_Photo_Verified__c != true) {
+                return 'Pas foto 3x4 must be verified before generating test card';
+            }
 
-            ContentVersion cv = new ContentVersion();
-            cv.Title = 'TestCard_' + opp.Name;
-            cv.PathOnClient = 'TestCard_' + opp.Name + '.pdf';
-            cv.VersionData = pdfBlob;
-            insert cv;
+            // Build expected file title
+            String expectedTitle = 'TestCard_' + opp.Name;
 
-            Id contentDocId = [
-                SELECT ContentDocumentId 
-                FROM ContentVersion 
-                WHERE Id = :cv.Id
-            ].ContentDocumentId;
-            
-            ContentDocumentLink cdl = new ContentDocumentLink();
-            cdl.ContentDocumentId = contentDocId;
-            cdl.LinkedEntityId = opp.Id;
-            cdl.ShareType = 'V';
-            cdl.Visibility = 'AllUsers';
-            insert cdl;
+            // 🔹 Check if file already exists
+            List<ContentDocumentLink> existingLinks = [
+                SELECT ContentDocumentId, ContentDocument.Title
+                FROM ContentDocumentLink
+                WHERE LinkedEntityId = :opp.Id
+                AND ContentDocument.Title = :expectedTitle
+                LIMIT 1
+            ];
 
-            System.debug('⚡ File Created and Linked Successfully');
-            return 'File Created Success';
+            Id contentDocId;
+            if (!existingLinks.isEmpty()) {
+                // File already exists → update with new version
+                contentDocId = existingLinks[0].ContentDocumentId;
+
+                PageReference pdfPage = Page.ExamCard;
+                pdfPage.getParameters().put('id', opp.Id);
+                Blob pdfBlob = pdfPage.getContentAsPDF();
+
+                ContentVersion newVersion = new ContentVersion();
+                newVersion.ContentDocumentId = contentDocId;
+                newVersion.Title = expectedTitle;
+                newVersion.PathOnClient = expectedTitle + '.pdf';
+                newVersion.VersionData = pdfBlob;
+                insert newVersion;
+
+                System.debug('⚡ Existing Test Card updated successfully');
+                return 'File Updated Success';
+            } else {
+                // No file exists → create new one
+                PageReference pdfPage = Page.ExamCard;
+                pdfPage.getParameters().put('id', opp.Id);
+                Blob pdfBlob = pdfPage.getContentAsPDF();
+
+                ContentVersion cv = new ContentVersion();
+                cv.Title = expectedTitle;
+                cv.PathOnClient = expectedTitle + '.pdf';
+                cv.VersionData = pdfBlob;
+                insert cv;
+
+                contentDocId = [
+                    SELECT ContentDocumentId 
+                    FROM ContentVersion 
+                    WHERE Id = :cv.Id
+                ].ContentDocumentId;
+
+                ContentDocumentLink cdl = new ContentDocumentLink();
+                cdl.ContentDocumentId = contentDocId;
+                cdl.LinkedEntityId = opp.Id;
+                cdl.ShareType = 'V';
+                cdl.Visibility = 'AllUsers';
+                insert cdl;
+
+                opp.Test_Card_Generated__c = true;
+                update opp;
+
+                System.debug('⚡ New Test Card created successfully');
+                return 'File Created Success';
+            }
+
         } catch (Exception e) {
-            System.debug('⚡ ERROR: ' + e.getMessage() + ' - ' + e.getStackTraceString());
+            System.debug('⚡ ERROR: ' + e.getMessage());
             return 'Error: ' + e.getMessage();
         }
     }
-
 }
