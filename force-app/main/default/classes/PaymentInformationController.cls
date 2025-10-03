@@ -146,20 +146,24 @@ public with sharing class PaymentInformationController {
     @AuraEnabled
     public static void emailFormPayment(Id oppId) {
         // 1) PASTIKAN nama page sesuai API Name di org-mu
-        // Contoh: jika page bernama "FormB_PaymentPDF"
         PageReference pr = Page.FormPayment;
         pr.getParameters().put('oppId', String.valueOf(oppId));
 
+        // === Test-aware PDF generation ===
         Blob pdfBlob;
-        try {
-            pdfBlob = pr.getContentAsPDF();
-        } catch (Exception ex) {
-            // Fallback diagnostik: coba render halaman minimal (Lite)
-            PageReference prLite = Page.FormPayment;
-            prLite.getParameters().put('oppId', String.valueOf(oppId));
-            Blob lite = prLite.getContentAsPDF();
-            // Jika Lite berhasil, lempar error yang jelas agar kamu tahu masalahnya di markup page utama
-            throw new AuraHandledException('Gagal render PDF utama. PDF Lite sukses → cek markup/tabel/CSS di VF page utama. Detail: ' + ex.getMessage());
+        if (Test.isRunningTest()) {
+            // In tests, getContentAsPDF() is blocked → use a stub blob
+            pdfBlob = Blob.valueOf('stub-pdf');
+        } else {
+            try {
+                pdfBlob = pr.getContentAsPDF();
+            } catch (Exception ex) {
+                // Fallback diagnostik: coba render halaman minimal (Lite)
+                PageReference prLite = Page.FormPayment;
+                prLite.getParameters().put('oppId', String.valueOf(oppId));
+                Blob lite = prLite.getContentAsPDF();
+                throw new AuraHandledException('Gagal render PDF utama. PDF Lite sukses → cek markup/tabel/CSS di VF page utama. Detail: ' + ex.getMessage());
+            }
         }
 
         // Query untuk subject & penerima (termasuk Study Program + Master Intake)
@@ -184,10 +188,7 @@ public with sharing class PaymentInformationController {
 
         Messaging.SingleEmailMessage msg = new Messaging.SingleEmailMessage();
         msg.setToAddresses(new String[]{ opp.Account.PersonEmail });
-
-        // CC contoh (opsional)
         msg.setCcAddresses(new List<String>{ 'admisi@metroseven.ac.id', 'finance@metroseven.ac.id' });
-
         msg.setSubject(subject);
         msg.setHtmlBody(
             '<p>Email ini dibuat oleh sistem, jika ada pertanyaan silakan email ke '+
@@ -219,6 +220,4 @@ public with sharing class PaymentInformationController {
             throw new AuraHandledException('Gagal mengirim email: ' + err);
         }
     }
-
-
 }
