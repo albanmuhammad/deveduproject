@@ -1,0 +1,8 @@
+<aura:component implements="force:hasRecordId,force:lightningQuickAction,flexipage:availableForRecordHome"
+                access="global">
+    <!-- LWC sebagai anak; forward recordId -->
+    <c:lwcGeneratePayment
+        recordId="{!v.recordId}"
+        onrefreshview="{!c.handleRefresh}"
+        onsaved="{!c.handleSaved}"/>
+</aura:component>

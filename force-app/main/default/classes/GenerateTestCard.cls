@@ -1,12 +1,15 @@
 public with sharing class GenerateTestCard {
-    
+
+    // Seam so tests can bypass Visualforce PDF rendering
+    @TestVisible private static Boolean BYPASS_PDF_IN_TESTS = true;
+
     @AuraEnabled
     public static String createTestCardPdf(Id oppId) {
         System.debug('⚡ START createTestCardPdf for oppId=' + oppId);
         try {
             Opportunity opp = [
                 SELECT Id, Name, Account.Name, CloseDate, Is_3x4_Photo_Verified__c,
-                    Test_Card_Generated__c
+                       Test_Card_Generated__c
                 FROM Opportunity
                 WHERE Id = :oppId
                 LIMIT 1
@@ -37,7 +40,13 @@ public with sharing class GenerateTestCard {
 
                 PageReference pdfPage = Page.ExamCard;
                 pdfPage.getParameters().put('id', opp.Id);
-                Blob pdfBlob = pdfPage.getContentAsPDF();
+
+                Blob pdfBlob;
+                if (Test.isRunningTest() && BYPASS_PDF_IN_TESTS) {
+                    pdfBlob = Blob.valueOf('test-pdf');
+                } else {
+                    pdfBlob = pdfPage.getContentAsPDF();
+                }
 
                 ContentVersion newVersion = new ContentVersion();
                 newVersion.ContentDocumentId = contentDocId;
@@ -52,7 +61,13 @@ public with sharing class GenerateTestCard {
                 // No file exists → create new one
                 PageReference pdfPage = Page.ExamCard;
                 pdfPage.getParameters().put('id', opp.Id);
-                Blob pdfBlob = pdfPage.getContentAsPDF();
+
+                Blob pdfBlob;
+                if (Test.isRunningTest() && BYPASS_PDF_IN_TESTS) {
+                    pdfBlob = Blob.valueOf('test-pdf');
+                } else {
+                    pdfBlob = pdfPage.getContentAsPDF();
+                }
 
                 ContentVersion cv = new ContentVersion();
                 cv.Title = expectedTitle;
@@ -61,8 +76,8 @@ public with sharing class GenerateTestCard {
                 insert cv;
 
                 contentDocId = [
-                    SELECT ContentDocumentId 
-                    FROM ContentVersion 
+                    SELECT ContentDocumentId
+                    FROM ContentVersion
                     WHERE Id = :cv.Id
                 ].ContentDocumentId;
 
