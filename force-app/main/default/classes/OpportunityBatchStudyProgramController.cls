@@ -46,26 +46,28 @@ public with sharing class OpportunityBatchStudyProgramController {
             junctionMap.put(key, bsp);
         }
 
-        // Query Accounts for First/LastName
+        // Query Accounts for First/LastName  (NO query in loop)
         Map<Id, Account> acctMap = new Map<Id, Account>();
         if (!accountIds.isEmpty()) {
-            for (Account acc : [
-                SELECT Id, FirstName, LastName 
-                FROM Account 
+            List<Account> accList = [
+                SELECT Id, FirstName, LastName
+                FROM Account
                 WHERE Id IN :accountIds
-            ]) {
+            ];
+            for (Account acc : accList) {
                 acctMap.put(acc.Id, acc);
             }
         }
 
-        // Query Batches for Test_Schedule__c
+        // Query Batches for Test_Schedule__c  (NO query in loop)
         Map<Id, Master_Batches__c> batchMap = new Map<Id, Master_Batches__c>();
         if (!batchIds.isEmpty()) {
-            for (Master_Batches__c b : [
-                SELECT Id, Test_Schedule__c 
-                FROM Master_Batches__c 
+            List<Master_Batches__c> batchList = [
+                SELECT Id, Test_Schedule__c
+                FROM Master_Batches__c
                 WHERE Id IN :batchIds
-            ]) {
+            ];
+            for (Master_Batches__c b : batchList) {
                 batchMap.put(b.Id, b);
             }
         }

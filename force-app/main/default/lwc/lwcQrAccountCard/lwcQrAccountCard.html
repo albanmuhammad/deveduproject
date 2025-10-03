@@ -1,0 +1,28 @@
+<template>
+  <lightning-card title="Applicant QR (Account)" icon-name="utility:scan">
+    <div class="slds-p-around_medium">
+      <template if:true={recordId}>
+        <div class="slds-text-title_caps slds-m-bottom_x-small">QR PREVIEW</div>
+
+        <div class="qr-wrap">
+          <div class="qr" lwc:dom="manual"></div>
+        </div>
+
+        <!-- HAPUS blok teks preview di bawah QR -->
+
+        <div class="slds-m-top_medium slds-grid slds-wrap slds-gutters">
+          <div class="slds-col slds-size_1-of-2">
+            <lightning-button label="Refresh" variant="neutral" onclick={renderQr}></lightning-button>
+          </div>
+          <div class="slds-col slds-size_1-of-2 slds-text-align_right">
+            <lightning-button label="Simpan sebagai File" variant="brand" onclick={handleSave}></lightning-button>
+          </div>
+        </div>
+      </template>
+
+      <template if:false={recordId}>
+        <lightning-formatted-text value="Letakkan komponen ini di Account Record Page."></lightning-formatted-text>
+      </template>
+    </div>
+  </lightning-card>
+</template>
