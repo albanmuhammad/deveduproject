@@ -20,7 +20,7 @@ public with sharing class PaymentInformationController {
 
         // Ambil VA Prefix dari Payment Channel
         Payment_Channel__c ch = [
-            SELECT Id, VA_Prefix__c
+            SELECT Id, VA_Prefix__c, Payment_Channel_Bank__c, Name 
             FROM Payment_Channel__c
             WHERE Id = :paymentChannelId
             LIMIT 1
@@ -62,9 +62,11 @@ public with sharing class PaymentInformationController {
             pi.Payment_For__c = (items.size() == 1) ? 'Full Payment' : ('Installment ' + it.num);
             pi.Payment_Channel__c = paymentChannelId;         // ⟵ set channel
             pi.Virtual_Account_No__c = virtualAcc;            // ⟵ set VA No
+            pi.Bank__c = ch.Payment_Channel_Bank__c;              // ← tambahkan
             toInsert.add(pi);
         }
         insert toInsert;
+        // emailFormPayment(oppId);
     }
 
     @AuraEnabled
@@ -83,5 +85,140 @@ public with sharing class PaymentInformationController {
             update opp;
         }
     }
+
+     // ====== DIPAKAI VISUALFORCE (controller instance) ======
+    public Id oppId { get; set; }
+    public Opportunity opp { get; private set; }
+    public List<Payment_Information__c> payments { get; private set; }
+
+    public Decimal totalSPP { get; private set; }
+    public Decimal sppTerbayar { get; private set; }
+    public Decimal getSisaSPP() { return (totalSPP - sppTerbayar); }
+
+    public String registrationNo { get; private set; }
+    public String getAccName() { return (opp != null && opp.Account != null) ? opp.Account.Name : ''; }
+    public String getProgramLabel() {
+        String study = (opp.Study_Program__r == null) ? '' : opp.Study_Program__r.Name;
+        String intake = (opp.Master_Intake__r == null) ? '' : opp.Master_Intake__r.Name;
+        return (study + ' ' + intake).trim();
+    }
+
+    // Konstruktor VF – dipanggil saat VF page dirender
+    public PaymentInformationController() {
+        // Hanya jalan saat konteks Visualforce
+        if (ApexPages.currentPage() == null) return;
+        String p = ApexPages.currentPage().getParameters().get('oppId');
+        if (String.isBlank(p)) return;
+        oppId = p;
+        initForVF();
+    }
+
+    private void initForVF() {
+        opp = [
+            SELECT Id, Name, Amount,
+               AccountId, Account.Name, Account.PersonEmail,
+               Study_Program__r.Name,
+               Master_Intake__r.Name
+            FROM Opportunity
+            WHERE Id = :oppId
+            LIMIT 1
+        ];
+
+        payments = [
+            SELECT Id, Amount__c, Due_Date__c, Payment_For__c,
+                   Name, Virtual_Account_No__c,
+                   Bank__c, Bank_Name__c, Payment_Channel__c,
+                   Application_Progress__c, Allocation__c
+            FROM Payment_Information__c
+            WHERE Application_Progress__c = :oppId AND Allocation__c =: 'Tuition Fee'
+            ORDER BY Due_Date__c ASC, CreatedDate ASC
+        ];
+
+        totalSPP    = (opp.Amount == null ? 0 : opp.Amount);
+        sppTerbayar = 0; // kalau ada sumber "sudah bayar", set di sini
+
+        registrationNo = payments.isEmpty()
+            ? ''
+            : payments[0].Name;
+    }
+
+    // ====== Helper: render PDF & kirim email ======
+    @AuraEnabled
+    public static void emailFormPayment(Id oppId) {
+        // 1) PASTIKAN nama page sesuai API Name di org-mu
+        // Contoh: jika page bernama "FormB_PaymentPDF"
+        PageReference pr = Page.FormPayment;
+        pr.getParameters().put('oppId', String.valueOf(oppId));
+
+        Blob pdfBlob;
+        try {
+            pdfBlob = pr.getContentAsPDF();
+        } catch (Exception ex) {
+            // Fallback diagnostik: coba render halaman minimal (Lite)
+            PageReference prLite = Page.FormPayment;
+            prLite.getParameters().put('oppId', String.valueOf(oppId));
+            Blob lite = prLite.getContentAsPDF();
+            // Jika Lite berhasil, lempar error yang jelas agar kamu tahu masalahnya di markup page utama
+            throw new AuraHandledException('Gagal render PDF utama. PDF Lite sukses → cek markup/tabel/CSS di VF page utama. Detail: ' + ex.getMessage());
+        }
+
+        // Query untuk subject & penerima (termasuk Study Program + Master Intake)
+        Opportunity opp = [
+            SELECT Id,
+                Account.Name, Account.PersonEmail,
+                Study_Program__r.Name,
+                Master_Intake__r.Name
+            FROM Opportunity
+            WHERE Id = :oppId
+            LIMIT 1
+        ];
+        if (opp.Account == null || String.isBlank(opp.Account.PersonEmail)) {
+            throw new AuraHandledException('Email pada Account kosong.');
+        }
+
+        String study  = (opp.Study_Program__r == null) ? '' : opp.Study_Program__r.Name;
+        String intake = (opp.Master_Intake__r == null) ? '' : opp.Master_Intake__r.Name;
+        String subject = ('Pengumuman & Form B – ' +
+                        (String.isBlank(study) ? '' : study + ' ') +
+                        (String.isBlank(intake) ? '' : intake)).trim();
+
+        Messaging.SingleEmailMessage msg = new Messaging.SingleEmailMessage();
+        msg.setToAddresses(new String[]{ opp.Account.PersonEmail });
+
+        // CC contoh (opsional)
+        msg.setCcAddresses(new List<String>{ 'admisi@metroseven.ac.id', 'finance@metroseven.ac.id' });
+
+        msg.setSubject(subject);
+        msg.setHtmlBody(
+            '<p>Email ini dibuat oleh sistem, jika ada pertanyaan silakan email ke '+
+            '<a href="mailto:admisi@metroseven.ac.id">admisi@metroseven.ac.id</a>.</p>'+
+            '<p>Kepada <b>' + opp.Account.Name + '</b>,</p>'+
+            '<p>Pendaftaran Anda telah kami proses dan <b>Form B / Offer Letter</b> terlampir.</p>'+
+            '<p><b>Aturan Pembayaran SPP (ringkas):</b></p>'+
+            '<ol>'+
+            '<li>SPP dibayarkan sekali untuk masa studi dan tidak termasuk BPP-SKS.</li>'+
+            '<li>Lewat jatuh tempo dianggap mengundurkan diri dan kursi tidak kami jamin.</li>'+
+            '<li>Pembayaran yang sudah dilakukan tidak dapat dikembalikan/dialihkan.</li>'+
+            '<li>Form sah tanpa tanda tangan pejabat terkait.</li>'+
+            '</ol>'+
+            '<p>Info: Telp (021) 5695-8723 / WhatsApp 0811-7579-727.</p>'+
+            '<p>Salam,<br/>Admisi Universitas metroseven</p>'
+        );
+
+        Messaging.EmailFileAttachment att = new Messaging.EmailFileAttachment();
+        att.setFileName('Form Pembayaran - ' + opp.Account.Name + '.pdf');
+        att.setContentType('application/pdf');
+        att.setBody(pdfBlob);
+        msg.setFileAttachments(new Messaging.EmailFileAttachment[]{ att });
+
+        Messaging.SendEmailResult[] r = Messaging.sendEmail(new Messaging.SingleEmailMessage[]{ msg }, false);
+        if (r == null || r.isEmpty() || !r[0].isSuccess()) {
+            String err = (r != null && !r.isEmpty() && r[0].getErrors() != null && r[0].getErrors().size() > 0)
+                ? r[0].getErrors()[0].getMessage()
+                : 'Unknown email send error';
+            throw new AuraHandledException('Gagal mengirim email: ' + err);
+        }
+    }
+
 
 }

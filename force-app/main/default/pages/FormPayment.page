@@ -1,0 +1,300 @@
+<apex:page controller="PaymentInformationController"
+           renderAs="pdf"
+           showHeader="false" 
+           applyBodyTag="false"
+           standardStylesheets="false">
+<html>
+<head>
+    <style>
+        @page {
+            margin: 1.5cm;
+            size: A4;
+        }
+        
+        body { 
+            font-family: Arial, sans-serif; 
+            font-size: 10pt; 
+            color: #000;
+            line-height: 1.4;
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .header-title {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+        
+        .header-subtitle {
+            font-size: 11pt;
+            font-weight: bold;
+        }
+        
+        .header-address {
+            font-size: 9pt;
+            margin-top: 5px;
+        }
+        
+        .doc-number {
+            font-size: 9pt;
+            margin: 15px 0;
+        }
+        
+        .recipient-section {
+            margin: 15px 0;
+            font-size: 10pt;
+        }
+        
+        .recipient-section .label {
+            display: inline-block;
+            width: 120px;
+        }
+        
+        .intro-text {
+            margin: 15px 0;
+            text-align: justify;
+        }
+        
+        .section-title {
+            font-weight: bold;
+            font-size: 10pt;
+            margin: 15px 0 8px 0;
+            text-decoration: underline;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 9pt;
+        }
+        
+        table.summary-table td {
+            padding: 6px 10px;
+            border: 1px solid #333;
+        }
+        
+        table.summary-table td:first-child {
+            width: 65%;
+        }
+        
+        table.payment-schedule th,
+        table.payment-schedule td {
+            border: 1px solid #333;
+            padding: 5px 8px;
+            text-align: left;
+        }
+        
+        table.payment-schedule th {
+            background-color: #e0e0e0;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .footnote {
+            font-size: 8pt;
+            margin-top: 5px;
+            font-style: italic;
+        }
+        
+        .rules-section {
+            margin: 15px 0;
+        }
+        
+        .rules-section ol {
+            margin: 5px 0;
+            padding-left: 25px;
+        }
+        
+        .rules-section li {
+            margin: 8px 0;
+            text-align: justify;
+        }
+        
+        .signature-section {
+            margin-top: 30px;
+            page-break-inside: avoid;
+        }
+        
+        .signature-box {
+            border: 1px solid #333;
+            padding: 15px;
+            margin-top: 10px;
+            text-align: center;
+        }
+        
+        .bold {
+            font-weight: bold;
+        }
+        
+        .appendix-page {
+            page-break-before: always;
+        }
+        
+        table.bank-table th,
+        table.bank-table td {
+            border: 1px solid #333;
+            padding: 5px 8px;
+            font-size: 8pt;
+        }
+        
+        table.bank-table th {
+            background-color: #e0e0e0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- MAIN PAGE -->
+    <div class="header">
+        <div class="header-title">KANTOR PUSAT PELAYANAN TERPADU - ADMISI</div>
+        <div class="header-subtitle">FORM B</div>
+        <div class="header-address">
+            GEDUNG M, LANTAI 1, JL. LETJEN S. PARMAN NO.1, GROGOL,<br/>
+            JAKARTA BARAT, 11470<br/>
+            Admisi Tarumanagara: 021-56958723, admisi@metroseven.ac.id
+        </div>
+    </div>
+
+    <div class="doc-number">
+        <apex:outputText value="{0,date,dd MMMM yyyy}">
+            <apex:param value="{!TODAY()}" />
+        </apex:outputText><br/><br/>
+        <b>Nomor:</b> {!opp.Name}<br/>
+        <b>Hal:</b> Pemberitahuan Hasil Seleksi Penerimaan Mahasiswa Baru {!opp.Master_Intake__r.Name}
+    </div>
+
+    <div class="recipient-section">
+        <b>Kepada Yth.</b><br/>
+        <b>{!accName}</b><br/>
+    </div>
+
+    <div class="intro-text">
+        Selamat, berdasarkan hasil seleksi, Saudara dinyatakan <b>DITERIMA</b> di Universitas Metroseven pada 
+        Program Studi <b>{!ProgramLabel}</b>, No. Registrasi <b>{!opp.Name}</b>.
+    </div>
+
+    <div class="section-title">Sumbangan Pengembangan Pendidikan (SPP)</div>
+    
+    <table class="summary-table">
+        <tr>
+            <td>SPP</td>
+            <td style="text-align: right;">
+                <apex:outputText value="Rp.{0, number, ###,###,###}">
+                    <apex:param value="{!totalSPP}" />
+                </apex:outputText>
+            </td>
+        </tr>
+        <tr>
+            <td>Biaya SPP yang sudah dibayar sebelumnya</td>
+            <td style="text-align: right;">
+                <apex:outputText value="(Rp.{0, number, ###,###,###})">
+                    <apex:param value="{!sppTerbayar}" />
+                </apex:outputText>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Total SPP yang harus dibayarkan</b></td>
+            <td style="text-align: right;">
+                <b><apex:outputText value="Rp.{0, number, ###,###,###}">
+                    <apex:param value="{!sisaSPP}" />
+                </apex:outputText></b>
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-title">Jadwal Pembayaran SPP:</div>
+    <p style="font-size: 9pt;">Pembayaran SPP dapat dilakukan dengan batas waktu pembayaran sebagai berikut:</p>
+
+    <table class="payment-schedule">
+        <thead>
+            <tr>
+                <th>Skema Pembayaran</th>
+                <th>Nominal*</th>
+                <th>Jatuh Tempo</th>
+                <th>Nomor Rekening**</th>
+                <th>Kode Bank</th>
+                <th>Kode VA</th>
+            </tr>
+        </thead>
+        <tbody>
+            <apex:repeat value="{!payments}" var="p">
+                <tr>
+                    <td>{!p.Payment_For__c}</td>
+                    <td style="text-align: right;">
+                        <apex:outputText value="Rp.{0, number, ###,###,###}">
+                            <apex:param value="{!p.Amount__c}" />
+                        </apex:outputText>
+                    </td>
+                    <td style="text-align: center;">
+                        <apex:outputText value="{0,date,dd MMMM yyyy}">
+                            <apex:param value="{!p.Due_Date__c}" />
+                        </apex:outputText>
+                    </td>
+                    <td>Lihat Lampiran</td>
+                    <td style="text-align: center;">{!p.Bank__c}</td>
+                    <td style="text-align: center;">{!p.Name}</td>
+                </tr>
+            </apex:repeat>
+        </tbody>
+    </table>
+
+    <div class="footnote">
+        *Belum termasuk biaya administrasi (terdapat di bagian Lampiran)<br/>
+        **Nomor rekening merupakan gabungan Kode Bank dan Kode VA
+    </div>
+
+    <div class="section-title">Aturan Pembayaran SPP:</div>
+    <div class="rules-section">
+        <ol>
+            <li>SPP dibayarkan hanya satu kali selama masa studi dan <b>tidak termasuk biaya BPP-SKS</b> yang wajib dibayarkan tiap semester.</li>
+            <li>Jika sampai dengan batas waktu pembayaran tersebut di atas <b>tidak dilakukan</b>, maka tempat yang tersedia pada program pilihan Saudara <b>TIDAK DAPAT KAMI JAMIN TERSEDIA</b> (tempat Anda dapat kami alihkan untuk calon mahasiswa lainnya) dan calon mahasiswa dianggap <b>mengundurkan diri</b>.</li>
+            <li>Semua pembayaran yang sudah dibayarkan <b>TIDAK DAPAT DIKEMBALIKAN</b> atau <b>DIALIHKAN KEPADA CALON MAHASISWA/I LAIN DENGAN ALASAN APAPUN</b> (termasuk lulus Seleksi Penerimaan Mahasiswa Baru Perguruan Tinggi Negeri dan perpindahan Jalur Pendaftaran dari Jalur Tanpa Tes ke Jalur dengan Tes dan sebaliknya), kecuali tidak lulus SMA/sederajat.</li>
+            <li>Bagi yang <b>tidak lulus SMA/sederajat</b>, dapat mengurus pengembalian SPP yang telah dibayarkan paling lambat 2 (dua) minggu (hari kerja) setelah pengumuman kelulusan SMA/sederajat dengan membawa bukti pembayaran SPP dan bukti ketidak lulusan SMA/sederajat dari Pihak Sekolah yang bersangkutan.</li>
+            <li>Dengan telah dibayarkannya SPP, maka orang tua/wali/calon mahasiswa baru dianggap telah membaca, mengerti, menyetujui serta tunduk dan terikat pada aturan, ketentuan, prosedur, kebijakan dan/atau segala aturan di atas.</li>
+            <li>Setelah form ini ditandatangani wajib dikirim kembali ke kantor Admisi melalui ekspedisi atau dikirimkan ke email Admisi. (sebelum dikirim mohon difotocopy untuk arsip saudara)</li>
+            <li>Form ini diterbitkan secara sistem oleh bagian Admisi - Kantor Pusat Metroseven dan <b>SAH</b> tanpa tandatangan pejabat terkait.</li>
+        </ol>
+    </div>
+
+    <div class="signature-section">
+        <p><b>Telah membaca, menerima dan menyetujui</b></p>
+        <div class="signature-box">
+            <p style="margin: 0 0 40px 0;">Orang Tua / Wali</p>
+            <p style="margin: 0;"><b>{!accName}/{!registrationNo}</b></p>
+            <p style="font-size: 8pt; margin-top: 5px;">Materai Rp.10.000,-</p>
+        </div>
+    </div>
+
+    <!-- APPENDIX PAGE -->
+    <div class="appendix-page">
+        <div class="header">
+            <div class="header-title">KANTOR PUSAT PELAYANAN TERPADU - ADMISI</div>
+            <div class="header-subtitle">FORM PEMBAYRAN</div>
+            <div class="header-address">
+                APL TOWER, LANTAI 90, JL. LETJEN S. PARMAN NO.1, GROGOL,<br/>
+                JAKARTA BARAT, 11470<br/>
+                Admisi Metroseven: 021-56958723, admisi@metroseven.ac.id
+            </div>
+        </div>
+
+
+        <div class="section-title">Catatan:</div>
+        <ol style="font-size: 9pt;">
+            <li>Biaya Admin diatas belum termasuk biaya tambahan dari masing-masing Bank. Nominal biayanya akan ditambahkan secara langsung dan dibayarkan untuk Bank.</li>
+            <li>Pembayaran SPP harus dilakukan ke sesama bank yang dituju (contoh: Bank BCA harus menggunakan Kode Bank BCA).</li>
+            <li>Bank BRI, CIMB Niaga, Danamon, Mandiri dan Permata wajib memasukk
+              an biaya admin secara manual.</li>
+            <li>Tata cara pembayaran SPP dapat diunduh di bit.ly/CaraBayarSPPatauUKT</li>
+        </ol>
+    </div>
+
+</body>
+</html>
+</apex:page>
