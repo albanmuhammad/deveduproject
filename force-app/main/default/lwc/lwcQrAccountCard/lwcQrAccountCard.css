@@ -1,0 +1,7 @@
+.qr-wrap {
+  background: #ffffff;
+  padding: 12px;        /* quiet zone di luar QR */
+  display: inline-block;
+  border-radius: 6px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.06);
+}

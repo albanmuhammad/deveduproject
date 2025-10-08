@@ -17,19 +17,38 @@ public with sharing class AccountDocumentController {
         out.isSchool = false;
         out.opportunityName = '';
         out.statusByType = new Map<String, DocStatus>();
+
         if (opportunityId != null) {
-            Opportunity o = [
-                SELECT Id, Name, RecordType.Name
-                FROM Opportunity
-                WHERE Id = :opportunityId
-                LIMIT 1
-            ];
+            // schema-aware, dynamic SOQL so packaging orgs without RTs still compile
+            Boolean hasRT = Schema.SObjectType.Opportunity.fields.getMap().containsKey('RecordTypeId');
+            String soql = 'SELECT Id, Name' + (hasRT ? ', RecordTypeId' : '') +
+                          ' FROM Opportunity WHERE Id = :opportunityId LIMIT 1';
+            Opportunity o = (Opportunity)Database.query(soql);
             out.opportunityName = o.Name;
-            out.isSchool = (o.RecordType != null && o.RecordType.Name == 'School');
+
+            if (hasRT) {
+                // *** changed: no direct o.RecordTypeId reference ***
+                Id rtId = (Id) o.get('RecordTypeId');
+                if (rtId != null) {
+                    try {
+                        RecordType rt = [
+                            SELECT DeveloperName
+                            FROM RecordType
+                            WHERE Id = :rtId
+                            LIMIT 1
+                        ];
+                        out.isSchool = (rt != null && rt.DeveloperName == 'School');
+                    } catch (Exception e) {
+                        out.isSchool = false;
+                    }
+                }
+            }
         }
+
         if (accountId == null || documentTypes == null || documentTypes.isEmpty()) {
             return out;
         }
+
         List<Account_Document__c> docs = new List<Account_Document__c>();
         if (opportunityId != null) {
             docs.addAll([
@@ -55,18 +74,22 @@ public with sharing class AccountDocumentController {
                 AND Application_Progress__c = NULL
             ]);
         }
+
         Map<Id, String> fileByDoc = new Map<Id, String>();
         if (!docs.isEmpty()) {
-            for (ContentDocumentLink l : [
+            Set<Id> docIds = new Map<Id, Account_Document__c>(docs).keySet();
+            List<ContentDocumentLink> links = [
                 SELECT ContentDocumentId, LinkedEntityId
                 FROM ContentDocumentLink
-                WHERE LinkedEntityId IN :new Map<Id, Account_Document__c>(docs).keySet()
-            ]) {
+                WHERE LinkedEntityId IN :docIds
+            ];
+            for (ContentDocumentLink l : links) {
                 if (!fileByDoc.containsKey(l.LinkedEntityId)) {
                     fileByDoc.put(l.LinkedEntityId, l.ContentDocumentId);
                 }
             }
         }
+
         Map<String, Account_Document__c> pick = new Map<String, Account_Document__c>();
         for (Account_Document__c d : docs) {
             if (!pick.containsKey(d.Document_Type__c)) {
@@ -77,7 +100,9 @@ public with sharing class AccountDocumentController {
                 pick.put(d.Document_Type__c, d);
             }
         }
+
         for (String t : documentTypes) out.statusByType.put(t, new DocStatus());
+
         for (String t : pick.keySet()) {
             Account_Document__c d = pick.get(t);
             DocStatus st = new DocStatus();
@@ -102,13 +127,9 @@ public with sharing class AccountDocumentController {
             throw new AuraHandledException('Missing required parameters.');
         }
 
-        // Find or create the Account_Document__c that represents this slot
         Account_Document__c doc = getOrCreateAccountDocument(accountId, opportunityId, documentType);
 
-        // --- NEW: If this slot is NOT verified, remove any previously attached ContentDocuments
-        //           so we don't keep stale files around.
         if (doc.Verified__c == false) {
-            // Collect all ContentDocuments currently linked to this Account_Document__c
             List<ContentDocumentLink> oldLinks = [
                 SELECT ContentDocumentId
                 FROM ContentDocumentLink
@@ -116,21 +137,17 @@ public with sharing class AccountDocumentController {
             ];
             Set<Id> oldDocIds = new Set<Id>();
             for (ContentDocumentLink l : oldLinks) {
-                // Just in case the same documentId gets passed again (rare), exclude the incoming one.
                 if (l.ContentDocumentId != contentDocumentId) {
                     oldDocIds.add(l.ContentDocumentId);
                 }
             }
             if (!oldDocIds.isEmpty()) {
-                // Deleting ContentDocument deletes all its links (including from the Opportunity “Files” related list)
                 delete [SELECT Id FROM ContentDocument WHERE Id IN :oldDocIds];
             }
-            // Clear any stale link URL
             doc.Document_Link__c = null;
             update doc;
         }
 
-        // Link the new upload to the Account_Document__c
         insert new ContentDocumentLink(
             ContentDocumentId = contentDocumentId,
             LinkedEntityId    = doc.Id,
@@ -138,14 +155,12 @@ public with sharing class AccountDocumentController {
             Visibility        = 'AllUsers'
         );
 
-        // Build a title based on AP name for nicer file naming
         String apName = '';
         if (opportunityId != null) {
             apName = [SELECT Name FROM Opportunity WHERE Id = :opportunityId LIMIT 1].Name;
         }
         String newFileTitle = String.isBlank(apName) ? documentType : (documentType + '_' + apName);
 
-        // Rename ContentDocument + latest ContentVersion
         ContentDocument cd = [SELECT Id, Title FROM ContentDocument WHERE Id = :contentDocumentId LIMIT 1];
         cd.Title = newFileTitle;
         update cd;
@@ -160,7 +175,6 @@ public with sharing class AccountDocumentController {
         cv.Title = newFileTitle;
         update cv;
 
-        // Update the logical document record
         String docName = String.isBlank(apName) ? documentType : (documentType + ' ' + apName);
         doc.Verified__c = false;
         doc.Document_Link__c = '/lightning/r/ContentDocument/' + contentDocumentId + '/view';
